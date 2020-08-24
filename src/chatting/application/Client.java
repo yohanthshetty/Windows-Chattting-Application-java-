@@ -17,6 +17,8 @@ public class Client extends JFrame implements ActionListener {
 	JButton b1;
 	static JTextArea a1;
 	
+	Boolean typing;
+	
 	Client(){
 		
 		p1 = new JPanel();
@@ -79,6 +81,18 @@ public class Client extends JFrame implements ActionListener {
 		l4.setBounds(110, 45, 100, 15);
 		p1.add(l4);
 		
+		Timer t = new Timer(1, new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(!typing) {
+					l4.setText("Active Now");
+				}
+			}
+		});
+		
+		t.setInitialDelay(2000);
+		
 		a1 = new JTextArea();
 		a1.setBounds(5, 75, 440, 575);
 		//a1.setBackground(Color.PINK);
@@ -92,6 +106,20 @@ public class Client extends JFrame implements ActionListener {
 		t1.setBounds(5, 655, 340, 40);
 		t1.setFont(new Font("SAN_SERIF", Font.PLAIN, 16));
 		add(t1);
+		
+		t1.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent ke) {
+				l4.setText("typing...");
+				
+				t.stop();
+				
+				typing = true;
+			}
+			public void keyReleased(KeyEvent ke) {
+				typing = false;
+				if(!t.isRunning()) t.start();
+			}
+		});
 		
 		b1 = new JButton("Send");
 		b1.setBounds(350, 657, 90, 35);
@@ -113,28 +141,28 @@ public class Client extends JFrame implements ActionListener {
 		try {
 			String out = t1.getText();
 			a1.setText(a1.getText()+"\n\t\t\t"+out);
-			dout.writeUTF(out);
 			t1.setText("");
-		} catch (Exception e) {}
+			dout.writeUTF(out);
+		} catch (Exception e) {System.out.println(e);}
 	}
 	
 	public static void main(String[] args) {
 		new Client().setVisible(true);
 		
-		
-		
 		String msginput = "";
-		try {
-			s = new Socket("127.0.0.1",5000);
-			din = new DataInputStream(s.getInputStream());
-			dout = new DataOutputStream(s.getOutputStream());
-			
-			msginput = din.readUTF();
-			a1.setText(a1.getText()+"\n"+msginput);
-			
-			s.close();
-			
-		}catch(Exception e) {}
+		while(true) {
+			try {
+				s = new Socket("127.0.0.1",6001);
+				din = new DataInputStream(s.getInputStream());
+				dout = new DataOutputStream(s.getOutputStream());
+				
+				msginput = din.readUTF();
+				a1.setText(a1.getText()+"\n"+msginput);
+				
+				s.close();
+				
+			}catch(Exception e) {System.out.println(e);}
+		}
 	}
 
 }
