@@ -3,32 +3,38 @@ package chatting.application;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.io.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
-public class Server extends JFrame implements ActionListener {
+public class Server implements ActionListener {
 	
 	static ServerSocket skt;
 	static Socket s;
 	
 	static DataInputStream din;
 	static DataOutputStream dout;
+
+	static Box vertical = Box.createVerticalBox();
 	
 	JPanel p1;
 	JTextField t1;
 	JButton b1;
-	static JTextArea a1;
-	
+	static JPanel a1;
+	static JFrame f1 = new JFrame();
 	Boolean typing;
 	
 	Server(){
 		
+		f1.setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		p1 = new JPanel();
 		p1.setLayout(null);
 		p1.setBackground(Color.decode("#009688"));
 		p1.setBounds(0, 0, 450, 70);
-		add(p1);
+		f1.add(p1);
 		
 		ImageIcon i1 = new ImageIcon(ClassLoader.getSystemResource("chatting/application/icons/back_arrow.png"));
 		Image i2 = i1.getImage().getScaledInstance(30, 30, Image.SCALE_DEFAULT);
@@ -96,19 +102,16 @@ public class Server extends JFrame implements ActionListener {
 		
 		t.setInitialDelay(2000);
 		
-		a1 = new JTextArea();
+		a1 = new JPanel();
 		a1.setBounds(5, 75, 440, 575);
 		//a1.setBackground(Color.PINK);
 		a1.setFont(new Font("SANS_SERIF", Font.PLAIN, 15));
-		a1.setEditable(false);
-		a1.setLineWrap(true);
-		a1.setWrapStyleWord(false);
-		add(a1);
+		f1.add(a1);
 		
 		t1 = new JTextField();
 		t1.setBounds(5, 655, 340, 40);
 		t1.setFont(new Font("SAN_SERIF", Font.PLAIN, 16));
-		add(t1);
+		f1.add(t1);
 		
 		t1.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent ke) {
@@ -131,45 +134,81 @@ public class Server extends JFrame implements ActionListener {
 		b1.setBackground(Color.decode("#009688"));
 		b1.setForeground(Color.WHITE);
 		b1.addActionListener(this);
-		add(b1);
+		f1.add(b1);
 		
-		setLayout(null);
-		setSize(450,700);
-		setUndecorated(true);
-		setVisible(true);
-		setLocation(400, 200);
-		
+		f1.setLayout(null);
+		f1.setSize(450,700);
+		f1.setLocation(400, 200);
+		f1.setUndecorated(true);
+		f1.setVisible(true);
 	}
 	
 	public void actionPerformed(ActionEvent ae) {
 		try {
 			String out = t1.getText();
-			a1.setText(a1.getText()+"\n\t\t\t"+out);
+			JPanel p2 = formatLabel(out);
+			
+			a1.setLayout(new BorderLayout());
+			
+			JPanel right = new JPanel(new BorderLayout());
+			right.add(p2, BorderLayout.LINE_END);
+			vertical.add(right);
+			vertical.add(Box.createVerticalStrut(15));
+			a1.add(vertical, BorderLayout.PAGE_START);
+			//a1.add(p1);
 			t1.setText("");
 			dout.writeUTF(out);
 		} catch(Exception e) {System.out.println(e);}
 	}
 	
+	public static JPanel formatLabel(String out) {
+		JPanel p3 = new JPanel();
+		p3.setLayout(new BoxLayout(p3, BoxLayout.Y_AXIS));
+		
+		JLabel l5 = new JLabel("<html><p style = \"width : 150px\">"+out+"</p></html>");
+		l5.setBackground(Color.decode("#DCF8C6"));
+		l5.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		l5.setOpaque(true);
+		l5.setBorder(new EmptyBorder(15,15,15,50));
+		
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("hh:mm");
+		
+		JLabel l6 = new JLabel();
+		l6.setText(sdf.format(cal.getTime()));
+		
+		p3.add(l5);
+		p3.add(l6);
+		return p3;
+	}
+	
 	public static void main(String[] args) {
-		new Server().setVisible(true);
+		new Server().f1.setVisible(true);
 		
 		String msginput = "";
-		while(true) {
-			try {
-				skt = new ServerSocket(6001);
+		
+		try {
+			skt = new ServerSocket(6001);
+			while(true) {
 				s = skt.accept();
-				
 				din = new DataInputStream(s.getInputStream());
 				dout = new DataOutputStream(s.getOutputStream());
 				
-				msginput = din.readUTF();
-				a1.setText(a1.getText()+"\n"+msginput);
-				
-				skt.close();
-				s.close();
-				
-			}catch(Exception e) {System.out.println(e);}
-		}
+				while(true) {
+					msginput = din.readUTF();
+					JPanel p2 = formatLabel(msginput);
+					
+					JPanel left = new JPanel(new BorderLayout());
+					left.add(p2, BorderLayout.LINE_START);
+					vertical.add(left);
+					f1.validate();
+				}
+			}
+			
+//			skt.close();
+//			s.close();
+			
+		}catch(Exception e) {System.out.println(e);}
 	}
 
 }
